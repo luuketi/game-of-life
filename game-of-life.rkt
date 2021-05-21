@@ -87,14 +87,13 @@
     
     filtered-cells))
 
+(define (is-live? cell) 
+    (equal? LIVE_CELL cell))
 
 (define (eval-cell world row col)
 
   (define (get-cell cell)
     (get-cell-value world (car cell) (cdr cell)))
-
-  (define (is-live? cell) 
-    (equal? LIVE_CELL cell))
 
   (let* [(world-size (get-world-size world))
          (neighbours (generate-neighbour-cells row col world-size))
