@@ -20,15 +20,15 @@
   (accumulate append '() (map proc seq)))
 
 
-(define DEAD_CELL 0 )
-(define LIVE_CELL 1 )
+(define DEAD_CELL 'D )
+(define LIVE_CELL 'L )
 
 
 (define (make-world rows)
   (define (make-row cols)
     (if (= 0 cols)
         '()
-        (cons 'D (make-row (- cols 1)))))
+        (cons DEAD_CELL (make-row (- cols 1)))))
   (define (make-aa rows cols)
     (if (= 0 rows)
         '()
@@ -67,7 +67,7 @@
 
 (define (reverse-cell world row col)
   (let* [(cell-value (get-cell-value world row col))
-         (reversed-cell (if (equal? cell-value 'L) 'D 'L))]
+         (reversed-cell (if (equal? cell-value LIVE_CELL) DEAD_CELL LIVE_CELL))]
     (define (change-cell-col row acc-col)
       (if (= acc-col col)
           (append (list reversed-cell) (cdr row))
@@ -111,18 +111,18 @@
     (get-cell-value world (car cell) (cdr cell)))
 
   (define (is-live? cell) 
-    (equal? 'L cell))
+    (equal? LIVE_CELL cell))
 
   (let* [(world-size (get-world-size world))
          (neighbours (generate-neighbour-cells row col world-size))
          (neighbours-values (map get-cell neighbours))
          (number-of-live-neighbours (count is-live? neighbours-values))
          (cell-value (get-cell-value world row col))]
-    (cond [(and (equal? 'L cell-value) (< number-of-live-neighbours 2) 'D)]
-          [(and (equal? 'L cell-value) (or (= number-of-live-neighbours 2)
-                                           (= number-of-live-neighbours 3)) 'L)]
-          [(and (equal? 'L cell-value) (> number-of-live-neighbours 2) 'D)]
-          [(and (equal? 'D cell-value) (= number-of-live-neighbours 3) 'L)]
+    (cond [(and (equal? LIVE_CELL cell-value) (< number-of-live-neighbours 2) DEAD_CELL)]
+          [(and (equal? LIVE_CELL cell-value) (or (= number-of-live-neighbours 2)
+                                                  (= number-of-live-neighbours 3)) LIVE_CELL)]
+          [(and (equal? LIVE_CELL cell-value) (> number-of-live-neighbours 2) DEAD_CELL)]
+          [(and (equal? DEAD_CELL cell-value) (= number-of-live-neighbours 3) LIVE_CELL)]
           [else cell-value])
     ))
 
@@ -156,14 +156,14 @@
                                                          (D D) )  ))
               (test-case "live cell in the middle for 3x3 world"
                          (let [(world (make-world 3))]
-                           (set! world (change-cell world 2 2 'L))
+                           (set! world (change-cell world 2 2 LIVE_CELL))
                            (check-equal? world    '( (D D D)
                                                      (D L D)
                                                      (D D D))  )))
               (test-case "kill cell in the middle for 3x3 world"
                          (let [(world (make-world 3))]
-                           (set! world (change-cell world 2 2 'L))
-                           (set! world (change-cell world 2 2 'D))
+                           (set! world (change-cell world 2 2 LIVE_CELL))
+                           (set! world (change-cell world 2 2 DEAD_CELL))
                            (check-equal? world    '( (D D D)
                                                      (D D D)
                                                      (D D D))  )))
@@ -182,9 +182,37 @@
                            (check-equal? world    '( (D D D)
                                                      (L L L)
                                                      (D D D) ) )))
-
-
-
+              (test-case "blinker - two generations"
+                         (let [(world (make-world 3))]
+                           (set! world (reverse-cell world 1 2))
+                           (set! world (reverse-cell world 2 2))
+                           (set! world (reverse-cell world 3 2))
+                           (set! world (goto-next-gen world))
+                           (set! world (goto-next-gen world))
+                           (check-equal? world    '( (D L D)
+                                                     (D L D)
+                                                     (D L D) ) )))
+              (test-case "block - three generations"
+                         (let [(world (make-world 4))]
+                           (set! world (reverse-cell world 2 2))
+                           (set! world (reverse-cell world 2 3))
+                           (set! world (reverse-cell world 3 2))
+                           (set! world (reverse-cell world 3 3))
+                           (set! world (goto-next-gen world))
+                           (check-equal? world    '( (D D D D)
+                                                     (D L L D)
+                                                     (D L L D)
+                                                     (D D D D) ) )
+                           (set! world (goto-next-gen world))
+                           (check-equal? world    '( (D D D D)
+                                                     (D L L D)
+                                                     (D L L D)
+                                                     (D D D D) ) )
+                           (set! world (goto-next-gen world))
+                           (check-equal? world    '( (D D D D)
+                                                     (D L L D)
+                                                     (D L L D)
+                                                     (D D D D) ) ) ))
               ))
    
 (run-tests game-of-life-tests)
