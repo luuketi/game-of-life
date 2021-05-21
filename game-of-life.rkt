@@ -51,6 +51,35 @@
   (change-cell-rec world 1))
 
 
+(define (get-cell-value world row col)
+  (define (get-cell-col row acc-col)
+    (if (= acc-col col)
+        (car row)
+        (get-cell-col (cdr row) (+ 1 acc-col))))
+
+  (define (get-cell-rec world acc-row)
+    (if (= acc-row row)
+        (get-cell-col (car world) 1) 
+        (get-cell-rec (cdr world) (+ 1 acc-row))))
+
+  (get-cell-rec world 1))
+
+
+(define (reverse-cell world row col)
+  (let* [(cell-value (get-cell-value world row col))
+         (reversed-cell (if (equal? cell-value 'L) 'D 'L))]
+  (define (change-cell-col row acc-col)
+    (if (= acc-col col)
+        (append (list reversed-cell) (cdr row))
+        (append (list (car row)) (change-cell-col (cdr row) (+ 1 acc-col)))))
+
+  (define (change-cell-rec world acc-row)
+    (if (= acc-row row)
+        (cons (change-cell-col (car world) 1) (cdr world))
+        (cons (car world) (change-cell-rec (cdr world) (+ 1 acc-row)))))
+
+  (change-cell-rec world 1)))
+
 
 
 (define game-of-life-tests 
@@ -73,6 +102,13 @@
                          (check-equal? world    '( (D D D)
                                                    (D D D)
                                                    (D D D))  )))
+              (test-case "reverse cell in the corner for 3x3 world"
+                         (let [(world (make-world 3))]
+                         (set! world (reverse-cell world 3 1))
+                         (check-equal? world    '( (D D D)
+                                                   (D D D)
+                                                   (L D D))  )))
+              
 
   ))
    
