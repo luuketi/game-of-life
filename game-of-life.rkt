@@ -36,19 +36,19 @@
   (make-aa rows rows))
 
 
-(define (live-cell world row col)
+(define (change-cell world row col state)
 
-  (define (live-cell-col row acc-col)
+  (define (change-cell-col row acc-col)
     (if (= acc-col col)
-        (append (list 'L) (cdr row))
-        (append (list (car row)) (live-cell-col (cdr row) (+ 1 acc-col)))))
+        (append (list state) (cdr row))
+        (append (list (car row)) (change-cell-col (cdr row) (+ 1 acc-col)))))
 
-  (define (live-cell-rec world acc-row)
+  (define (change-cell-rec world acc-row)
     (if (= acc-row row)
-        (cons (live-cell-col (car world) 1) (cdr world))
-        (cons (car world) (live-cell-rec (cdr world) (+ 1 acc-row)))))
+        (cons (change-cell-col (car world) 1) (cdr world))
+        (cons (car world) (change-cell-rec (cdr world) (+ 1 acc-row)))))
 
-  (live-cell-rec world 1))
+  (change-cell-rec world 1))
 
 
 
@@ -62,12 +62,17 @@
                                                          (D D) )  ))
               (test-case "live cell in the middle for 3x3 world"
                          (let [(world (make-world 3))]
-                         (set! world (live-cell world 2 2))
+                         (set! world (change-cell world 2 2 'L))
                          (check-equal? world    '( (D D D)
                                                    (D L D)
-                                                   (D D D))  ))
-
-              )
+                                                   (D D D))  )))
+              (test-case "kill cell in the middle for 3x3 world"
+                         (let [(world (make-world 3))]
+                         (set! world (change-cell world 2 2 'L))
+                         (set! world (change-cell world 2 2 'D))
+                         (check-equal? world    '( (D D D)
+                                                   (D D D)
+                                                   (D D D))  )))
 
   ))
    
